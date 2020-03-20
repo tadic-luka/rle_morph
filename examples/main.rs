@@ -38,9 +38,9 @@ fn load_image<P: AsRef<Path>>(path: P) -> Image {
 fn main() {
     let img = load_image(std::env::args().skip(1).next().expect("provide path to png image"));
     let start = std::time::Instant::now();
-    println!("Image memory: {} B", img.data().len());
-    let mut a = RLE::from(img);
+    let mut a = RLE::from(&img);
     println!("Time took to load img: {} ms", start.elapsed().as_millis());
     println!("Total runs: {}", a.runs().len());
+    println!("Image memory: {} B", img.data().len());
     println!("RLE memory: {} B", a.runs().len() * std::mem::size_of::<Run>());
 }

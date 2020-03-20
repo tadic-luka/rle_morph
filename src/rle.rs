@@ -198,7 +198,7 @@ impl RLE {
         Image::new(self.width, self.height, output)
     }
 
-    pub fn dilate(self, s: &Self) -> Self {
+    pub fn dilate(&self, s: &Self) -> Self {
         // find primary runs
         let mut primary_runs = Vec::with_capacity(self.runs.len() * s.runs.len());
         let delta_x: i32 = (s.width as i32 / 2);
@@ -223,7 +223,8 @@ impl RLE {
         }
         Self {
             runs: primary_runs,
-            ..self
+            width: self.width,
+            height: self.height,
         }
     }
 
@@ -239,8 +240,8 @@ enum DecodeState {
     RunStarted,
     RunEnded,
 }
-impl From<Image> for RLE {
-    fn from(img: Image) -> RLE {
+impl From<&Image> for RLE {
+    fn from(img: &Image) -> RLE {
         let w = img.w();
         let h = img.h();
         let data = img.data();
@@ -685,7 +686,7 @@ mod tests {
             0, 1, 1, 
             0, 0, 0
         ]);
-        let rle = RLE::from(img);
+        let rle = RLE::from(&img);
         assert_eq!(rle, RLE {
             width: 3,
             height: 3,
@@ -708,7 +709,7 @@ mod tests {
             1, 1, 1, 
             1, 1, 1
         ]);
-        let rle = RLE::from(img);
+        let rle = RLE::from(&img);
         assert_eq!(rle, RLE {
             width: 3,
             height:3,
@@ -740,7 +741,7 @@ mod tests {
             0, 1, 1, 
             0, 0, 0
         ]);
-        let rle = RLE::from(img.clone());
+        let rle = RLE::from(&img);
         assert_eq!(img, rle.to_image());
     }
 
@@ -759,8 +760,9 @@ mod tests {
             1, 1, 1,
             1, 1, 1
         ]);
-        let rle = RLE::from(orig);
-        let result = rle.dilate(&RLE::from(dilate)).to_image();
+        let rle = RLE::from(&orig);
+        let result = rle.dilate(&RLE::from(&dilate)).to_image();
+
         assert_eq!(result,
             Image::new(
                 6, 6, 
@@ -770,6 +772,25 @@ mod tests {
                     0, 0, 1, 1, 1, 1,
                     0, 0, 0, 0, 0, 0,
                     0, 1, 1, 1, 0, 0,
+                    0, 1, 1, 1, 0, 0
+                ])
+        );
+        let dilate = Image::new(3, 3, vec![
+            0, 1, 0,
+            1, 1, 1,
+            0, 1, 0
+        ]);
+        let rle = RLE::from(&orig);
+        let result = rle.dilate(&RLE::from(&dilate)).to_image();
+        assert_eq!(result,
+            Image::new(
+                6, 6,
+                vec![
+                    1, 1, 1, 1, 1, 0,
+                    0, 1, 1, 1, 1, 1,
+                    0, 0, 0, 1, 1, 0,
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 1, 0, 0, 0,
                     0, 1, 1, 1, 0, 0
                 ])
         );
