@@ -235,10 +235,9 @@ impl RLE {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum DecodeState {
-    Start,
-    RunStarted,
-    RunEnded,
+enum EncodeState {
+    NotRunning,
+    Running,
 }
 impl From<&Image> for RLE {
     fn from(img: &Image) -> RLE {
@@ -247,33 +246,38 @@ impl From<&Image> for RLE {
         let data = img.data();
         let mut runs = Vec::new();
         for y in 0..h {
-            let mut state = DecodeState::Start;
+            let mut state = EncodeState::NotRunning;
             let mut run = Run::default();
             run.y = y as _;
             for current in y * w..(y+1) * w {
                 if data[current] > 0 {
                     state = match state {
-                        DecodeState::Start | DecodeState::RunEnded => {
+                        // if we were not in run create run
+                        EncodeState::NotRunning => {
                             run.x_start = (current - y * w) as _;
                             run.x_end = run.x_start;
-                            DecodeState::RunStarted
+                            EncodeState::Running
                         }
-                        DecodeState::RunStarted => {
+                        // if we were in run then just increment interval
+                        EncodeState::Running => {
                             run.x_end += 1;
-                            DecodeState::RunStarted
+                            EncodeState::Running
                         },
                     };
                 } else {
                     state = match state {
-                        DecodeState::RunStarted => {
+                        // if we were in run now stop and add in collection
+                        EncodeState::Running => {
                             runs.push(run);
-                            DecodeState::RunEnded
+                            EncodeState::NotRunning
                         },
-                        _ => state,
+                        // otherwise continue
+                        EncodeState::NotRunning => state,
                     };
                 }
             }
-            if let DecodeState::RunStarted = state {
+            // in the end if we were in run add that run into collection
+            if let EncodeState::Running = state {
                 runs.push(run);
             }
 
