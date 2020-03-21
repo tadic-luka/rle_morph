@@ -122,25 +122,27 @@ impl RLE {
         }
     }
 
+    /// Structuring element for dilation/erosion using l1 norm (manhattan distance)
     #[inline]
     pub fn l1_structuring(k: usize) -> Self {
         let dim = 2 * k + 1;
         let center = (dim / 2) as i32;
         let mut runs = Vec::with_capacity(dim);
-        runs.push(Run::default()
-            .with_x_start(0)
-            .with_x_end((dim - 1) as i32)
-            .with_y(center)
-        );
+        // Center row has all 1, every other row has number of rows
+        // equal to center row - distance to current row.
+        // This means that pixels are mirrored.
         for i in 0..dim as i32 {
-            if i == center {
-                continue;
+            if i <= center {
+                runs.push(Run::default()
+                    .with_x_start(center - i)
+                    .with_x_end(center + i)
+                    .with_y(i)
+                );
+            } else {
+                // every row after center is mirrored
+                let run = runs[dim - i as usize - 1];
+                runs.push(run.with_y(i));
             }
-            runs.push(Run::default()
-                .with_x_start(center)
-                .with_x_end(center)
-                .with_y(i)
-            );
         }
         Self {
             width: dim,
@@ -149,11 +151,13 @@ impl RLE {
         }
     }
 
+    /// Structuring element for dilation/erosion using linf norm (maximum norm)
     #[inline]
     pub fn linf_structuring(k: usize) -> Self {
         let dim = 2 * k + 1;
         let center = (dim / 2) as i32;
         let mut runs = Vec::with_capacity(dim);
+        // all pixels are 1
         for i in 0..dim as i32 {
             runs.push(Run::default()
                 .with_x_start(0)
@@ -800,5 +804,132 @@ mod tests {
                 ])
         );
     }
-}
 
+    #[test]
+    fn l1_structuring_test() {
+        // manhattan distance of 0, no dilation
+        let r = RLE::l1_structuring(0);
+        let expected = Image::new(
+            1,1,
+            vec![1]
+        );
+        assert_eq!(r, RLE::from(&expected));
+
+        // manhattan distance of 1
+        let r = RLE::l1_structuring(1);
+        let expected = Image::new(
+            3,3,
+            vec![
+                0, 1, 0,
+                1, 1, 1,
+                0, 1, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+        // manhattan distance of 1
+        let r = RLE::l1_structuring(1);
+        let expected = Image::new(
+            3,3,
+            vec![
+                0, 1, 0,
+                1, 1, 1,
+                0, 1, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+        // manhattan distance of 1
+        let r = RLE::l1_structuring(1);
+        let expected = Image::new(
+            3,3,
+            vec![
+                0, 1, 0,
+                1, 1, 1,
+                0, 1, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+        // manhattan distance of 1
+        let r = RLE::l1_structuring(1);
+        let expected = Image::new(
+            3,3,
+            vec![
+                0, 1, 0,
+                1, 1, 1,
+                0, 1, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+
+        // manhattan distance of 2
+        let r = RLE::l1_structuring(2);
+        let expected = Image::new(
+            5, 5,
+            vec![
+                0, 0, 1, 0, 0,
+                0, 1, 1, 1, 0,
+                1, 1, 1, 1, 1,
+                0, 1, 1, 1, 0,
+                0, 0, 1, 0, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+
+        // manhattan distance of 3
+        let r = RLE::l1_structuring(3);
+        let expected = Image::new(
+            7, 7,
+            vec![
+                0, 0, 0, 1, 0, 0, 0,
+                0, 0, 1, 1, 1, 0, 0,
+                0, 1, 1, 1, 1, 1, 0,
+                1, 1, 1, 1, 1, 1, 1,
+                0, 1, 1, 1, 1, 1, 0,
+                0, 0, 1, 1, 1, 0, 0,
+                0, 0, 0, 1, 0, 0, 0,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+    }
+
+    #[test]
+    fn linf_structuring_test() {
+        let r = RLE::linf_structuring(1);
+        let expected = Image::new(
+            3,3,
+            vec![
+                1, 1, 1,
+                1, 1, 1,
+                1, 1, 1,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+
+        let r = RLE::linf_structuring(2);
+        let expected = Image::new(
+            5, 5,
+            vec![
+                1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+
+        let r = RLE::linf_structuring(3);
+        let expected = Image::new(
+            7, 7,
+            vec![
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1,
+            ]
+        );
+        assert_eq!(r, RLE::from(&expected));
+    }
+}
