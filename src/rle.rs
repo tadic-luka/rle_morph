@@ -156,15 +156,12 @@ impl RLE {
     pub fn linf_structuring(k: usize) -> Self {
         let dim = 2 * k + 1;
         let center = (dim / 2) as i32;
-        let mut runs = Vec::with_capacity(dim);
         // all pixels are 1
-        for i in 0..dim as i32 {
-            runs.push(Run::default()
-                .with_x_start(0)
-                .with_x_end((dim - 1) as i32)
-                .with_y(i)
-            );
-        }
+        let mut runs = (0..dim as i32).map(|i| Run {
+            x_start: 0,
+            x_end: (dim - 1) as i32,
+            y: i
+        }).collect();
         Self {
             width: dim,
             height: dim,
