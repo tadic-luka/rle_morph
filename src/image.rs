@@ -32,6 +32,11 @@ impl Image {
     pub fn data(&self) -> &[u8] {
         &self.data
     }
+
+    /// Get underlying vec used to store pixels
+    pub fn into_raw(self) -> Vec<u8> {
+        self.data
+    }
 }
 
 impl fmt::Display for Image {

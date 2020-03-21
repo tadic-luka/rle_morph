@@ -183,6 +183,7 @@ impl RLE {
         self
     }
 
+    /// Decode RLE to binary image (0s and 1s).
     #[inline]
     pub fn to_image(&self) -> Image {
         let mut output = vec![0; self.width * self.height];
