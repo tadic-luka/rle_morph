@@ -32,7 +32,6 @@ impl Image {
     pub fn data(&self) -> &[u8] {
         &self.data
     }
-
 }
 
 impl fmt::Display for Image {
@@ -44,3 +43,15 @@ impl fmt::Display for Image {
     }
 }
 
+impl Index<usize> for Image {
+    type Output = [u8];
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index * self.w..(index+1)*self.w]
+    }
+}
+
+impl IndexMut<usize> for Image {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.data[index * self.w..(index+1)*self.w]
+    }
+}
