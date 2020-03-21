@@ -1,25 +1,23 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BatchSize};
 use std::path::Path;
 use rle_morph::{Run, RLE, Image};
+use image::GrayImage;
 
-fn load_image<P: AsRef<Path>>(path: P) -> Image {
-    use png::ColorType::*;
-    use std::fs::File;
-    let decoder = png::Decoder::new(File::open(path).unwrap());
-    let (info, mut reader) = decoder.read_info().unwrap();
-    let mut img_data = vec![0; info.buffer_size()];
-    reader.next_frame(&mut img_data).unwrap();
-
-    let data = match info.color_type {
-        Grayscale => {
-            img_data
-        }
-        _ => panic!("Invalid png type"),
-    };
-    println!("dimensions: {}x{}", info.width, info.height);
-    Image::new(info.width as _, info.height as _, data)
+fn load_image<P: AsRef<Path>>(path: P) -> GrayImage {
+    image::open(path).unwrap().into_luma()
 }
 
+fn clone_to_image(img: &GrayImage) -> Image {
+    let clone = img.clone();
+    let (width, height) = img.dimensions();
+    Image::new(width as _, height as _, clone.into_raw())
+}
+
+fn clone_to_gray_image(img: &Image) -> GrayImage {
+    let clone = img.clone();
+    let (width, height) = (img.w(), img.h());
+    GrayImage::from_raw(width as _, height as _, clone.into_raw()).unwrap()
+}
 
 fn dilate_small_rle(c: &mut Criterion) {
         let orig = Image::new(6, 6, vec![
@@ -61,7 +59,7 @@ fn dilate_small_image_crate(c: &mut Criterion) {
 }
 
 fn dilate_4k_rle(c: &mut Criterion) {
-        let orig = load_image("benches/slice000.png");
+        let orig = clone_to_image(&load_image("benches/slice000.png"));
         let dilate = Image::new(3, 3, vec![
             0, 1, 0,
             1, 1, 1,
@@ -77,8 +75,7 @@ fn dilate_4k_rle(c: &mut Criterion) {
 fn dilate_4k_image_crate(c: &mut Criterion) {
         use imageproc::distance_transform::Norm;
         use imageproc::morphology::dilate_mut;
-        let orig = image::open("benches/slice000.png").unwrap();
-        let orig = orig.into_luma();
+        let orig = load_image("benches/slice000.png");
         c.bench_function("4k_image_crate", move |b| {
             b.iter_batched(|| orig.clone(),
                 |mut img| dilate_mut(&mut img, Norm::L1, 1),  BatchSize::LargeInput
@@ -87,7 +84,8 @@ fn dilate_4k_image_crate(c: &mut Criterion) {
 }
 
 criterion_group! {
-    dilate, dilate_small_rle,dilate_4k_rle, dilate_small_image_crate, dilate_4k_image_crate
+    dilate, dilate_small_rle,dilate_4k_rle, dilate_small_image_crate,
+    dilate_4k_image_crate
 }
 
 criterion_main!(dilate);
