@@ -1,18 +1,21 @@
 use super::Image;
 use std::cmp::Ordering;
 
-/// Sequence of '1' (or '0') pixels horizontally (or vertically) in binary image.
+/// Sequence of '1' (or '0') pixels horizontally in binary image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Run {
     /// coordinate (column) of left-most (starting) pixel
     pub x_start: i32,
     /// coordinate (column) of right-most (ending) pixel
     pub x_end: i32,
-    /// y coordinate of current Run
+    /// y coordinate (row) of current Run
     pub y: i32,
 }
 
 impl Run {
+    /// Check if self overlaps with other.
+    /// Two runs overlap if their y value is same and if their (x_start, x_end)
+    /// intervals overlap.
     #[inline]
     fn overlaps(mut self, other: Self) -> bool {
         match self.cmp(&other) {
