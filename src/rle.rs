@@ -194,7 +194,7 @@ impl RLE {
         for &run in self.runs.iter().filter(|run| run.y >= 0 && run.y < self.height as _) {
             let y = run.y as usize;
             let start = std::cmp::max(0, run.x_start) as usize;
-            let end = std::cmp::max(0, std::cmp::min(run.x_end as usize, self.width));
+            let end = std::cmp::max(0, std::cmp::min(run.x_end as usize, self.width - 1));
             let col = &mut output[y * self.width..(y + 1) * self.width];
             for i in start..end + 1 {
                 col[i] = 1;
