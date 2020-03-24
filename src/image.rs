@@ -37,6 +37,23 @@ impl Image {
     pub fn into_raw(self) -> Vec<u8> {
         self.data
     }
+
+    /// Flip bits in image (nonzero to 0, 0 to 1)
+    pub fn flip_bits_mut(&mut self) {
+        for elem in &mut self.data {
+            *elem = if *elem > 0 {
+                0
+            } else {
+                1
+            }
+        }
+    }
+
+    /// Flip bits in image (nonzero to 0, 0 to 1)
+    pub fn flip_bits(mut self) -> Self {
+        self.flip_bits_mut();
+        self
+    }
 }
 
 impl fmt::Display for Image {

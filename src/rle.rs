@@ -237,6 +237,13 @@ impl RLE {
     pub fn runs(&self) -> &[Run] {
         &self.runs
     }
+
+    /// Flip bits (1s -> 0s, 0s -> 1s)
+    pub fn flip_bits(&self) -> Self {
+        // TODO:  <24-03-20> optimize flipping bits instead of encoding and decoding back
+        let img = self.to_image().flip_bits();
+        Self::from(&img)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -931,5 +938,47 @@ mod tests {
             ]
         );
         assert_eq!(r, RLE::from(&expected));
+    }
+
+    #[test]
+    fn flip_bits_test() {
+        let img = Image::new(6, 6, vec![
+            0, 1, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 1, 1,
+            0, 0, 0, 0, 0, 0,
+        ]);
+        let rle = RLE::from(&img).flip_bits();
+        assert_eq!(
+            rle.to_image(),
+            Image::new(6, 6,vec![
+            1, 0, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1,
+            1, 1, 0, 0, 0, 1,
+            1, 1, 0, 1, 1, 1,
+            1, 1, 0, 0, 0, 0,
+            1, 1, 1, 1, 1, 1,
+            ])
+        );
+        assert_eq!(
+            rle,
+            RLE {
+                width: 6,
+                height: 6,
+                runs: vec![
+                    Run { x_start: 0, x_end: 0, y: 0 },
+                    Run { x_start: 2, x_end: 5, y: 0 },
+                    Run { x_start: 0, x_end: 5, y: 1 },
+                    Run { x_start: 0, x_end: 1, y: 2 },
+                    Run { x_start: 5, x_end: 5, y: 2 },
+                    Run { x_start: 0, x_end: 1, y: 3 },
+                    Run { x_start: 3, x_end: 5, y: 3 },
+                    Run { x_start: 0, x_end: 1, y: 4 },
+                    Run { x_start: 0, x_end: 5, y: 5 },
+                ]
+            }
+        );
     }
 }
