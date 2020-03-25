@@ -240,9 +240,92 @@ impl RLE {
 
     /// Flip bits (1s -> 0s, 0s -> 1s)
     pub fn flip_bits(&self) -> Self {
-        // TODO:  <24-03-20> optimize flipping bits instead of encoding and decoding back
-        let img = self.to_image().flip_bits();
-        Self::from(&img)
+        // if all bits are 0, then set all 'height' runs with 'width' length 
+        if self.runs.len() == 0 {
+            return Self {
+                width: self.width,
+                height: self.height,
+                runs: (0..self.height).map(|i| Run {
+                    x_start: 0,
+                    x_end: self.width as i32 - 1,
+                    y: i as i32
+                }).collect(),
+            };
+        }
+        // runs has at least 1 element, set first as last
+        let mut last_run = self.runs[0];
+        let mut runs = Vec::new();
+        // first create all 0 rows with y less than last_run.y to ones 
+        for i in 0..last_run.y {
+            runs.push(Run {
+                x_start: 0,
+                x_end: self.width as i32 - 1,
+                y: i,
+            });
+        }
+        // if first run does not start from 0 then add run from 0 to x_start - 1
+        if 0 < last_run.x_start {
+            runs.push(Run {
+                x_start: 0,
+                x_end: last_run.x_start - 1,
+                y: last_run.y,
+            });
+        }
+        // go trough all other runs
+        for &run in self.runs.iter().skip(1) {
+            // if we are in same row 
+            if run.y == last_run.y {
+                // add run between last and current run (between them are zeroes)
+                runs.push(Run {
+                    x_start: last_run.x_end + 1,
+                    x_end: run.x_start - 1,
+                    y: run.y,
+                });
+            } else { // we are not in the same row
+                // if last_run (run from previous row) did not go to end (width)
+                // then add ones starting from last_run to end of width
+                if self.width as i32 - 1 > last_run.x_end {
+                    runs.push(Run {
+                        x_start: last_run.x_end + 1,
+                        x_end: self.width as i32 - 1,
+                        y: last_run.y,
+                    });
+                }
+                // add run for each row between last and current run
+                // if current run row is right after last run row then this will not loop
+                for i in last_run.y+1..run.y {
+                    runs.push(Run {
+                        x_start: 0,
+                        x_end: self.width as i32 - 1,
+                        y: i,
+                    });
+                }
+                // again if first run in this row does not start from 0 then add run with 1 
+                // from start to run.x_start
+                if 0 < run.x_start {
+                    runs.push(Run {
+                        x_start: 0,
+                        x_end: run.x_start - 1,
+                        y: run.y,
+                    });
+                }
+            }
+            last_run = run;
+        }
+        // in the end if last_run is not really last row
+        // all rows after that are zeroes which are flipped to ones
+        for i in last_run.y + 1..self.height as i32 {
+            runs.push(Run {
+                x_start: 0,
+                x_end: self.width as i32 - 1,
+                y: i,
+            });
+        }
+        Self {
+            width: self.width,
+            height: self.height,
+            runs
+        }
     }
 }
 

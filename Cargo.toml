@@ -14,3 +14,7 @@ imageproc = "0.20.0"
 [[bench]]
 name = "dilate_bench"
 harness = false
+
+[[bench]]
+name = "flip_bits"
+harness = false
