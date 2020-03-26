@@ -1,5 +1,7 @@
 mod image;
 mod rle;
+mod run;
 
 pub use self::image::Image;
-pub use rle::{Run, RLE};
+pub use run::Run;
+pub use rle::RLE;
