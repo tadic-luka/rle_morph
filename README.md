@@ -7,3 +7,14 @@ Features:
 - [x] Dilation
 - [ ] Erosion
 - [ ] Optimize implementation
+
+
+## Some basic performance comparison:
+Intel i7-8750H, 6 cores, linux 5.4.23_1
+
+| Library | Dilate | Erode |
+| --- | --- | --- |
+| rle_morph |  ~4600 us | not implemented |
+| [opencv example](examples/opencv) |  ~12600 us | ~12600 us|
+
+Details about opencv used are explained in examples/opencv/README.md.
