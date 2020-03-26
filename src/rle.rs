@@ -233,6 +233,10 @@ impl RLE {
         }
     }
 
+    pub fn erode(&self, s: &Self) -> Self {
+        self.flip_bits().dilate(s).flip_bits()
+    }
+
     #[inline]
     pub fn runs(&self) -> &[Run] {
         &self.runs
@@ -891,6 +895,63 @@ mod tests {
                     0, 0, 0, 0, 0, 0,
                     0, 0, 1, 0, 0, 0,
                     0, 1, 1, 1, 0, 0
+                ])
+        );
+    }
+
+    #[test]
+    fn erode_test() {
+        let orig = Image::new(6, 6, vec![
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 1, 1, 1, 0, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 0, 0, 0,
+        ]);
+        let erode = Image::new(3, 3, vec![
+            0, 1, 0,
+            1, 1, 1,
+            0, 1, 0
+        ]);
+        let rle = RLE::from(&orig);
+        let result = rle.erode(&RLE::from(&erode)).to_image();
+        assert_eq!(result,
+            Image::new(
+                6, 6,
+                vec![
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0
+                ])
+        );
+
+        let orig = Image::new(5, 5, vec![
+            0, 0, 0, 0, 0,
+            0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0,
+        ]);
+        let erode = Image::new(3, 3, vec![
+            1, 1, 1,
+            1, 1, 1,
+            1, 1, 1
+        ]);
+        let rle = RLE::from(&orig);
+        let result = rle.erode(&RLE::from(&erode)).to_image();
+        assert_eq!(result,
+            Image::new(
+                5, 5,
+                vec![
+                    0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0,
+                    0, 0, 1, 0, 0,
+                    0, 0, 1, 0, 0,
+                    0, 0, 1, 0, 0,
                 ])
         );
     }
