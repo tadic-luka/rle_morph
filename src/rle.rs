@@ -151,7 +151,7 @@ impl RLE {
     /// Flip bits (1s -> 0s, 0s -> 1s)
     pub fn flip_bits(&self) -> Self {
         // if all bits are 0, then set all 'height' runs with 'width' length 
-        if self.runs.len() == 0 {
+        if self.runs.is_empty() {
             return Self {
                 width: self.width,
                 height: self.height,
@@ -166,13 +166,9 @@ impl RLE {
         let mut last_run = self.runs[0];
         let mut runs = Vec::new();
         // first create all 0 rows with y less than last_run.y to ones 
-        for i in 0..last_run.y {
-            runs.push(Run {
-                x_start: 0,
-                x_end: self.width as i32 - 1,
-                y: i,
-            });
-        }
+        runs.extend(
+            (0..last_run.y).map(|y| Run { x_start: 0, x_end: self.width as i32 - 1, y: y as _ })
+        );
         // if first run does not start from 0 then add run from 0 to x_start - 1
         if 0 < last_run.x_start {
             runs.push(Run {
@@ -222,15 +218,18 @@ impl RLE {
             }
             last_run = run;
         }
-        // in the end if last_run is not really last row
-        // all rows after that are zeroes which are flipped to ones
-        for i in last_run.y + 1..self.height as i32 {
+        if self.width as i32 - 1 > last_run.x_end {
             runs.push(Run {
-                x_start: 0,
+                x_start: last_run.x_end + 1,
                 x_end: self.width as i32 - 1,
-                y: i,
+                y: last_run.y,
             });
         }
+        // in the end if last_run is not really last row
+        // all rows after that are zeroes which are flipped to ones
+        runs.extend(
+            (last_run.y + 1..self.height as i32).map(|y| Run { x_start: 0, x_end: self.width as i32 - 1, y: y as _ })
+        );
         Self {
             width: self.width,
             height: self.height,
@@ -673,7 +672,7 @@ mod test {
             0, 0, 0, 0, 0, 0,
             0, 0, 1, 1, 1, 0,
             0, 0, 1, 0, 0, 0,
-            0, 0, 1, 1, 1, 1,
+            0, 0, 1, 1, 1, 0,
             0, 0, 0, 0, 0, 0,
         ]);
         let rle = RLE::from(&img).flip_bits();
@@ -684,9 +683,13 @@ mod test {
             1, 1, 1, 1, 1, 1,
             1, 1, 0, 0, 0, 1,
             1, 1, 0, 1, 1, 1,
-            1, 1, 0, 0, 0, 0,
+            1, 1, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1,
             ])
+        );
+        assert_eq!(
+            rle.flip_bits().to_image(),
+            img
         );
         assert_eq!(
             rle,
@@ -702,6 +705,7 @@ mod test {
                     Run { x_start: 0, x_end: 1, y: 3 },
                     Run { x_start: 3, x_end: 5, y: 3 },
                     Run { x_start: 0, x_end: 1, y: 4 },
+                    Run { x_start: 5, x_end: 5, y: 4 },
                     Run { x_start: 0, x_end: 5, y: 5 },
                 ]
             }
