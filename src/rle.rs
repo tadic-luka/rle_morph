@@ -23,6 +23,57 @@ impl RLE {
         }
     }
 
+    /// Create RLE binary image from raw pixels.
+    /// If w * h != data.len() then this will panic.
+    /// All pixel values greater than 0 will be treated as binary value 1 else 0.
+    pub fn from_raw_data(w: usize, h: usize, data: &[u8]) -> Self {
+        assert_eq!(w * h, data.len());
+        let mut runs = Vec::new();
+        for y in 0..h {
+            let mut state = EncodeState::NotRunning;
+            let mut run = Run::default();
+            run.y = y as _;
+            for current in y * w..(y+1) * w {
+                if data[current] > 0 {
+                    state = match state {
+                        // if we were not in run create run
+                        EncodeState::NotRunning => {
+                            run.x_start = (current - y * w) as _;
+                            run.x_end = run.x_start;
+                            EncodeState::Running
+                        }
+                        // if we were in run then just increment interval
+                        EncodeState::Running => {
+                            run.x_end += 1;
+                            EncodeState::Running
+                        },
+                    };
+                } else {
+                    state = match state {
+                        // if we were in run now stop and add in collection
+                        EncodeState::Running => {
+                            runs.push(run);
+                            EncodeState::NotRunning
+                        },
+                        // otherwise continue
+                        EncodeState::NotRunning => state,
+                    };
+                }
+            }
+            // in the end if we were in run add that run into collection
+            if let EncodeState::Running = state {
+                runs.push(run);
+            }
+
+        }
+        Self {
+            width: w,
+            height: h,
+            runs
+        }
+
+    }
+
     /// Structuring element for dilation/erosion using l1 norm (manhattan distance)
     #[inline]
     pub fn l1_structuring(k: usize) -> Self {
@@ -248,49 +299,7 @@ impl From<&Image> for RLE {
         let w = img.w();
         let h = img.h();
         let data = img.data();
-        let mut runs = Vec::new();
-        for y in 0..h {
-            let mut state = EncodeState::NotRunning;
-            let mut run = Run::default();
-            run.y = y as _;
-            for current in y * w..(y+1) * w {
-                if data[current] > 0 {
-                    state = match state {
-                        // if we were not in run create run
-                        EncodeState::NotRunning => {
-                            run.x_start = (current - y * w) as _;
-                            run.x_end = run.x_start;
-                            EncodeState::Running
-                        }
-                        // if we were in run then just increment interval
-                        EncodeState::Running => {
-                            run.x_end += 1;
-                            EncodeState::Running
-                        },
-                    };
-                } else {
-                    state = match state {
-                        // if we were in run now stop and add in collection
-                        EncodeState::Running => {
-                            runs.push(run);
-                            EncodeState::NotRunning
-                        },
-                        // otherwise continue
-                        EncodeState::NotRunning => state,
-                    };
-                }
-            }
-            // in the end if we were in run add that run into collection
-            if let EncodeState::Running = state {
-                runs.push(run);
-            }
-
-        }
-        RLE {
-            width: w,
-            height: h,
-            runs
-        }
+        RLE::from_raw_data(w, h, &data)
     }
 }
 
