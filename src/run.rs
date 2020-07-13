@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+
 /// Sequence of '1' (or '0') pixels horizontally in binary image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Run {
@@ -27,7 +28,6 @@ impl Run {
         }
     }
 
-
     /// Merge two runs.
     /// If self does not overlap with other then self is returned.
     #[inline]
@@ -40,6 +40,33 @@ impl Run {
             x_end: std::cmp::max(self.x_end, other.x_end),
             y: self.y
         }
+    }
+
+    /// Check if two runs interect.
+    pub fn intersects(self, other: Self) -> bool {
+        match self.cmp(&other) {
+            Ordering::Equal => true,
+            Ordering::Less => {
+                self.y == other.y &&
+                    self.x_start <= other.x_end &&
+                    self.x_end >= other.x_start
+            }
+            Ordering::Greater => other.intersects(self)
+        }
+    }
+    /// Get intersection of two runs.
+    /// If self does not intersect with other then None is returned.
+    #[inline]
+    pub fn intersect(self, other: Self) -> Option<Self> {
+        if !self.intersects(other) {
+            return None;
+        }
+
+        Some(Self {
+            x_start: std::cmp::max(self.x_start, other.x_start),
+            x_end: std::cmp::min(self.x_end, other.x_end),
+            y: self.y
+        })
     }
 
     #[inline]
@@ -432,5 +459,71 @@ mod tests {
                     y: 0
             }
         );
+    }
+
+    #[test]
+    fn intersects_test() {
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 4, x_end: 10, y: 0};
+            assert!(a.overlaps(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 3, y: 0};
+            let b = Run { x_start: 3, x_end: 3, y: 0};
+            assert!(a.overlaps(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 1};
+            let b = Run { x_start: 4, x_end: 10, y: 0};
+            assert!(!a.overlaps(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 6, x_end: 10, y: 0};
+            assert!(!a.overlaps(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 6, x_end: 10, y: 1};
+            assert!(!a.overlaps(b));
+        }
+    }
+
+    #[test]
+    fn intersect_test() {
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 4, x_end: 10, y: 0};
+            assert_eq!(Run{ x_start: 4, x_end: 5, y: 0}, a.intersect(b).unwrap());
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 3, y: 0};
+            let b = Run { x_start: 3, x_end: 3, y: 0};
+            assert_eq!(Run{ x_start: 3, x_end: 3, y: 0}, a.intersect(b).unwrap());
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 1};
+            let b = Run { x_start: 4, x_end: 10, y: 0};
+            assert_eq!(None, a.intersect(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 6, x_end: 10, y: 0};
+            assert_eq!(None, a.intersect(b));
+        }
+
+        {
+            let a = Run { x_start: 3, x_end: 5, y: 0};
+            let b = Run { x_start: 6, x_end: 10, y: 1};
+            assert_eq!(None, a.intersect(b));
+        }
     }
 }
