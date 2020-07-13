@@ -133,7 +133,13 @@ impl RLE {
     /// Mutable version
     #[inline]
     pub fn merge_overlapping_runs_mut(&mut self) {
-        Run::merge_overlapping_runs_mut(&mut self.runs);
+        loop {
+            let last_cnt = self.runs.len();
+            Run::merge_overlapping_runs_mut(&mut self.runs);
+            if last_cnt == self.runs.len() {
+                break;
+            }
+        }
     }
 
     /// Merge overlapping runs in this RLE.
@@ -176,18 +182,11 @@ impl RLE {
                 );
             }
         }
-        loop {
-            let len_before = primary_runs.len();
-            Run::merge_overlapping_runs_mut(&mut primary_runs);
-            if primary_runs.len() == len_before {
-                break;
-            }
-        }
         Self {
             runs: primary_runs,
             width: self.width,
             height: self.height,
-        }
+        }.merge_overlapping_runs()
     }
 
     pub fn erode(&self, s: &Self) -> Self {
