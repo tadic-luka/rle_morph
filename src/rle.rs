@@ -146,7 +146,7 @@ impl RLE {
 
     /// Decode RLE to binary image (0s and 1s).
     #[inline]
-    pub fn to_image(&self) -> Image {
+    pub fn to_image(&self, pixel_val: u8) -> Image {
         let mut output = vec![0; self.width * self.height];
         for &run in self.runs.iter().filter(|run| run.y >= 0 && run.y < self.height as _) {
             let y = run.y as usize;
@@ -154,7 +154,7 @@ impl RLE {
             let end = std::cmp::max(0, std::cmp::min(run.x_end as usize, self.width - 1));
             let col = &mut output[y * self.width..(y + 1) * self.width];
             for i in start..end + 1 {
-                col[i] = 1;
+                col[i] = pixel_val;
             }
         }
         Image::new(self.width, self.height, output)
@@ -349,7 +349,7 @@ mod test {
             x_end: 0,
             y: 0,
         });
-        let img = a.to_image();
+        let img = a.to_image(1);
         assert_eq!(img.w(), a.width);
         assert_eq!(img.h(), a.height);
         assert_eq!(img.data(), &[
@@ -363,7 +363,7 @@ mod test {
             x_end: 2,
             y: 2
         });
-        let img = a.to_image();
+        let img = a.to_image(1);
         assert_eq!(img.data(), &[
             1, 0, 0,
             0, 0, 0,
@@ -397,30 +397,32 @@ mod test {
             ]
         });
 
-        let img = Image::new(3, 3, vec![
-            1, 1, 1, 
-            1, 1, 1, 
-            1, 1, 1
+        let img = Image::new(3, 5, vec![
+            0, 0, 0, 
+            0, 1, 1, 
+            0, 1, 0,
+            1, 0, 0,
+            0, 0, 0
         ]);
         let rle = RLE::from(&img);
         assert_eq!(rle, RLE {
             width: 3,
-            height:3,
+            height: 5,
             runs: vec![
                 Run {
-                    x_start: 0,
+                    x_start: 1,
                     x_end: 2,
-                    y: 0,
+                    y: 1,
                 },
                 Run {
-                    x_start: 0,
-                    x_end: 2,
-                    y: 1
-                },
-                Run {
-                    x_start: 0,
-                    x_end: 2,
+                    x_start: 1,
+                    x_end: 1,
                     y: 2
+                },
+                Run {
+                    x_start: 0,
+                    x_end: 0,
+                    y: 3
                 }
                 ]
         });
@@ -435,7 +437,7 @@ mod test {
             0, 0, 0
         ]);
         let rle = RLE::from(&img);
-        assert_eq!(img, rle.to_image());
+        assert_eq!(img, rle.to_image(1));
     }
 
     #[test]
@@ -454,7 +456,7 @@ mod test {
             1, 1, 1
         ]);
         let rle = RLE::from(&orig);
-        let result = rle.dilate(&RLE::from(&dilate)).to_image();
+        let result = rle.dilate(&RLE::from(&dilate)).to_image(1);
 
         assert_eq!(result,
             Image::new(
@@ -474,7 +476,7 @@ mod test {
             0, 1, 0
         ]);
         let rle = RLE::from(&orig);
-        let result = rle.dilate(&RLE::from(&dilate)).to_image();
+        let result = rle.dilate(&RLE::from(&dilate)).to_image(1);
         assert_eq!(result,
             Image::new(
                 6, 6,
@@ -505,7 +507,7 @@ mod test {
             0, 1, 0
         ]);
         let rle = RLE::from(&orig);
-        let result = rle.erode(&RLE::from(&erode)).to_image();
+        let result = rle.erode(&RLE::from(&erode)).to_image(1);
         assert_eq!(result,
             Image::new(
                 6, 6,
@@ -532,7 +534,7 @@ mod test {
             1, 1, 1
         ]);
         let rle = RLE::from(&orig);
-        let result = rle.erode(&RLE::from(&erode)).to_image();
+        let result = rle.erode(&RLE::from(&erode)).to_image(1);
         assert_eq!(result,
             Image::new(
                 5, 5,
@@ -686,7 +688,7 @@ mod test {
         ]);
         let rle = RLE::from(&img).flip_bits();
         assert_eq!(
-            rle.to_image(),
+            rle.to_image(1),
             Image::new(6, 6,vec![
             1, 0, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1,
@@ -697,7 +699,7 @@ mod test {
             ])
         );
         assert_eq!(
-            rle.flip_bits().to_image(),
+            rle.flip_bits().to_image(1),
             img
         );
         assert_eq!(

@@ -17,15 +17,7 @@ fn clone_to_image(img: &GrayImage) -> Image {
 fn clone_to_gray_image(img: &Image) -> GrayImage {
     let clone = img.clone();
     let (width, height) = (img.w(), img.h());
-    let mut img_data = clone.into_raw();
-    // binary image is 0s and 1s, convert all 1s to white
-    for val in &mut img_data {
-        *val = if *val > 0 {
-            255
-        } else {
-            0
-        };
-    }
+    let img_data = clone.into_raw();
     GrayImage::from_raw(width as _, height as _, img_data).unwrap()
 }
 
@@ -55,7 +47,7 @@ fn main() {
     match operation.as_ref() {
         "d" | "D" => {
             let start = std::time::Instant::now();
-            img = rle.dilate(&RLE::linf_structuring(5)).to_image();
+            img = rle.dilate(&RLE::linf_structuring(5)).to_image(255);
             println!("Time took to dilate with rle and decode: {} us", start.elapsed().as_micros());
 
             let start = std::time::Instant::now();
@@ -64,7 +56,7 @@ fn main() {
         },
         "e" | "E" => {
             let start = std::time::Instant::now();
-            img = rle.erode(&RLE::linf_structuring(5)).to_image();
+            img = rle.erode(&RLE::linf_structuring(5)).to_image(255);
             println!("Time took to erode with rle and decode: {} us", start.elapsed().as_micros());
 
             let start = std::time::Instant::now();
