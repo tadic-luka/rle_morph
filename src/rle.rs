@@ -23,6 +23,15 @@ impl RLE {
         }
     }
 
+    /// Create RLE binary image with all pixels 1
+    pub fn ones(width: usize, height: usize) -> Self {
+        Self {
+            runs: (0..height).map(|y| Run {x_start: 0, x_end: width as _, y: y as _}).collect(),
+            width,
+            height,
+        }
+    }
+
     /// Create RLE binary image from raw pixels.
     /// If w * h != data.len() then this will panic.
     /// All pixel values greater than 0 will be treated as binary value 1 else 0.
