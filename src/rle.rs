@@ -133,7 +133,7 @@ impl RLE {
     /// Set Run of pixels to 1.
     /// This method will also try to merge runs
     #[inline]
-    pub fn add_run(&mut self, run: Run) {
+    fn add_run(&mut self, run: Run) {
         self.runs.push(run);
         self.merge_overlapping_runs_mut();
     }
