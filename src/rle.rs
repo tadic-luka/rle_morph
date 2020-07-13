@@ -296,6 +296,76 @@ impl RLE {
         }
     }
 
+
+    /// Get all 1s in self which are not in other, same as set difference.
+    /// If dimensions of self and other are not same this method will panic.
+    pub fn diff(&self, other: &Self) -> Self {
+        self.and(&other.flip_bits())
+    }
+
+    /// Binary or on image pixels, mutable version.
+    /// If dimensions of self and other are not same this method will panic.
+    pub fn or_mut(&mut self, other: &Self) {
+        assert!(self.width == other.width && self.height == other.height);
+        self.runs.reserve(other.runs.len());
+        self.runs.extend(&other.runs);
+
+        self.merge_overlapping_runs_mut();
+    }
+
+    /// Binary or on image pixels.
+    /// If dimensions of self and other are not same this method will panic.
+    pub fn or(&self, other: &Self) -> Self {
+        assert!(self.width == other.width && self.height == other.height);
+        let mut runs = Vec::with_capacity(self.runs.len() + other.runs.len());
+        runs.extend(&self.runs);
+        runs.extend(&other.runs);
+        Self {
+            runs,
+            width: self.width,
+            height: self.height,
+        }.merge_overlapping_runs()
+    }
+
+    /// Binary and on image pixels.
+    /// If dimensions of self and other are not same this method will panic.
+    pub fn and(&self, other: &Self) -> Self {
+        assert!(self.width == other.width && self.height == other.height);
+        let mut runs = Vec::with_capacity(self.runs.len());
+        if self.runs.is_empty() || other.runs.is_empty() {
+            return Self {
+                runs: Vec::new(),
+                width: self.width,
+                height: self.height,
+            };
+        }
+        let mut i = 0;
+        let mut j = 0;
+        while i < self.runs.len() && j < other.runs.len() {
+            if self.runs[i].y < other.runs[j].y {
+                i += 1;
+                continue;
+            }
+            else if self.runs[i].y > other.runs[j].y {
+                j += 1;
+                continue;
+            }
+            else if self.runs[i].intersects(other.runs[j]) {
+                runs.push(self.runs[i].intersect(other.runs[j]).unwrap());
+            }
+            if self.runs[i].x_end < other.runs[j].x_end  {
+                i += 1;
+            } else {
+                j += 1;
+            }
+        }
+        Self {
+            runs,
+            width: self.width,
+            height: self.height,
+        }.merge_overlapping_runs()
+    }
+
     /// Get image width.
     pub fn width(&self) -> usize {
         self.width
@@ -737,6 +807,94 @@ mod test {
                     Run { x_start: 0, x_end: 1, y: 4 },
                     Run { x_start: 5, x_end: 5, y: 4 },
                     Run { x_start: 0, x_end: 5, y: 5 },
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn diff_test() {
+        let a = Image::new(6, 6, vec![
+            1, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 1, 1,
+            0, 0, 0, 0, 0, 0,
+        ]);
+        let b = Image::new(6, 6, vec![
+            0, 1, 1, 1, 0, 0,
+            0, 0, 0, 1, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 1, 1,
+            0, 0, 0, 0, 0, 0,
+        ]);
+        let rle = RLE::from(&a).diff(&RLE::from(&b));
+        assert_eq!(
+            rle.to_image(1),
+            Image::new(6, 6,vec![
+            1, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            ])
+        );
+        assert_eq!(
+            rle,
+            RLE {
+                width: 6,
+                height: 6,
+                runs: vec![
+                    Run { x_start: 0, x_end: 0, y: 0 },
+                    Run { x_start: 5, x_end: 5, y: 0 },
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn and_test() {
+        let a = Image::new(6, 6, vec![
+            1, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 1, 1,
+            0, 0, 0, 0, 0, 0,
+        ]);
+        let b = Image::new(6, 6, vec![
+            0, 1, 1, 1, 0, 0,
+            0, 0, 0, 1, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 0, 1,
+            0, 0, 0, 0, 0, 0,
+        ]);
+        let rle = RLE::from(&a).and(&RLE::from(&b));
+        assert_eq!(
+            rle.to_image(1),
+            Image::new(6, 6,vec![
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 0,
+            0, 0, 1, 0, 0, 0,
+            0, 0, 1, 1, 0, 1,
+            0, 0, 0, 0, 0, 0,
+            ])
+        );
+        assert_eq!(
+            rle,
+            RLE {
+                width: 6,
+                height: 6,
+                runs: vec![
+                    Run { x_start: 2, x_end: 4, y: 2 },
+                    Run { x_start: 2, x_end: 2, y: 3 },
+                    Run { x_start: 2, x_end: 3, y: 4 },
+                    Run { x_start: 5, x_end: 5, y: 4 },
                 ]
             }
         );
