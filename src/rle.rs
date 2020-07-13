@@ -295,6 +295,17 @@ impl RLE {
             runs
         }
     }
+
+    /// Get image width.
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    /// Get image height.
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
 }
 
 #[derive(Debug, Clone, Copy)]
