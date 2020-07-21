@@ -331,7 +331,6 @@ impl RLE {
     /// If dimensions of self and other are not same this method will panic.
     pub fn and(&self, other: &Self) -> Self {
         assert!(self.width == other.width && self.height == other.height);
-        let mut runs = Vec::with_capacity(self.runs.len());
         if self.runs.is_empty() || other.runs.is_empty() {
             return Self {
                 runs: Vec::new(),
@@ -339,6 +338,7 @@ impl RLE {
                 height: self.height,
             };
         }
+        let mut runs = Vec::with_capacity(self.runs.len());
         let mut i = 0;
         let mut j = 0;
         while i < self.runs.len() && j < other.runs.len() {
