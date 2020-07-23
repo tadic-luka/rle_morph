@@ -21,3 +21,7 @@ harness = false
 [[bench]]
 name = "flip_bits"
 harness = false
+
+[[bench]]
+name = "and"
+harness = false
