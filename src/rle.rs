@@ -1,4 +1,4 @@
-use super::{Image, Run};
+use super::{Image, Run, FlipBitsIter};
 
 
 /// Representation of a binary image using a combinations of runs.
@@ -23,6 +23,13 @@ impl RLE {
         }
     }
 
+    pub fn from_runs(width: usize, height: usize, runs: Vec<Run>) -> Self {
+        Self {
+            width,
+            height,
+            runs
+        }
+    }
     /// Create RLE binary image with all pixels 1
     pub fn ones(width: usize, height: usize) -> Self {
         Self {
@@ -196,6 +203,10 @@ impl RLE {
             width: self.width,
             height: self.height,
         }.merge_overlapping_runs()
+    }
+
+    pub fn flip_bits_iter(&self) -> FlipBitsIter<'_> {
+        FlipBitsIter::new(&self)
     }
 
     pub fn erode(&self, s: &Self) -> Self {

@@ -34,6 +34,21 @@ fn flip_small(c: &mut Criterion) {
         });
 }
 
+fn flip_small_iter(c: &mut Criterion) {
+        let orig = Image::new(6, 6, vec![
+            0, 1, 0, 0, 0, 0,
+            0, 0, 0, 1, 1, 0, 
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0, 0,
+        ]);
+        let rle = RLE::from(&orig);
+        c.bench_function("flip_small_iter", move |b| {
+            b.iter(|| rle.flip_bits_iter().collect::<Vec<_>>())
+        });
+}
+
 
 fn flip_4k(c: &mut Criterion) {
         let orig = clone_to_image(&load_image("benches/slice000.png"));
@@ -48,7 +63,20 @@ fn flip_4k(c: &mut Criterion) {
         });
 }
 
+fn flip_4k_iter(c: &mut Criterion) {
+        let orig = clone_to_image(&load_image("benches/slice000.png"));
+        let erode = Image::new(3, 3, vec![
+            0, 1, 0,
+            1, 1, 1,
+            0, 1, 0
+        ]);
+        let rle = RLE::from(&orig);
+        c.bench_function("flip_4k_iter", move |b| {
+            b.iter(|| rle.flip_bits_iter().collect::<Vec<_>>())
+        });
+}
+
 criterion_group! {
-    flip, flip_4k, flip_small
+    flip, flip_4k, flip_small, flip_small_iter, flip_4k_iter
 }
 criterion_main!(flip);
