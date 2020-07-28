@@ -31,7 +31,7 @@ fn main() {
 
     // flip bits
     let start = std::time::Instant::now();
-    let img = rle.flip_bits().to_image(255);
+    let img = (!&rle).to_image(255);
     println!("Time took to flip bits: {} us", start.elapsed().as_micros());
     to_gray_image(img).save("flipped.png").unwrap();
 }

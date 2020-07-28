@@ -22,7 +22,7 @@ fn clone_to_gray_image(img: &Image) -> GrayImage {
 }
 
 fn holow_rle(img: RLE) -> RLE {
-    let mut eroded = img.erode(&RLE::linf_structuring(5)).flip_bits();
+    let mut eroded = img.erode(&RLE::linf_structuring(5));
     &img - &eroded
 }
 
