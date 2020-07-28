@@ -23,7 +23,7 @@ fn clone_to_gray_image(img: &Image) -> GrayImage {
 
 fn holow_rle(img: RLE) -> RLE {
     let mut eroded = img.erode(&RLE::linf_structuring(5)).flip_bits();
-    img.and(&eroded)
+    &img - &eroded
 }
 
 fn hollow_imageproc(img: &mut GrayImage) {
@@ -54,8 +54,6 @@ fn main() {
 
     let mut img = clone_to_image(&gray_image);
     let rle = RLE::from(&img);
-    assert_eq!(rle.flip_bits().flip_bits().to_image(255), img);
-    assert_eq!(rle.and(&rle).to_image(255), img);
 
     let start = std::time::Instant::now();
     let tmp = holow_rle(rle);

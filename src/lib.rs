@@ -1,6 +1,7 @@
 mod flip_bits_iter;
 mod image;
 mod rle;
+mod ops;
 mod run;
 
 pub(crate) use flip_bits_iter::FlipBitsIter;
